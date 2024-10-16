@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <array>
 #include <string>
+#include <thread>
 
 namespace sonyflakepp
 {
