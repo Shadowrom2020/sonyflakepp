@@ -6,16 +6,10 @@ void testNextID()
 {
     sonyflakepp::Settings settings;
     settings.StartTime = std::chrono::system_clock::now();
-    settings.MachineID = []()
-        {
-            return 0;
-        };
-    settings.CheckMachineID = [](uint16_t)
-        {
-            return true;
-        };
+    settings.MachineID = 1;
 
     sonyflakepp::Sonyflake sf(settings);
+
     auto id1 = sf.NextID();
     auto id2 = sf.NextID();
     assert(id1 != id2);

@@ -1,30 +1,3 @@
-/**
-MIT License
-
-Copyright (c) 2024 Jürgen Herrmann
-
-Copyright (c) 2015 Sony Corporation
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-*/
-
 #ifndef SONYFLAKE_H
 #define SONYFLAKE_H
 
@@ -48,8 +21,7 @@ namespace sonyflakepp
     struct Settings
     {
         std::chrono::time_point<std::chrono::system_clock> StartTime; ///< Start time for the Sonyflake
-        std::function<uint16_t()> MachineID; ///< Function to retrieve the unique machine ID
-        std::function<bool(uint16_t)> CheckMachineID; ///< Function to validate the machine ID
+        uint16_t MachineID; ///< Unique machine ID
     };
 
     /**
@@ -72,17 +44,7 @@ namespace sonyflakepp
             startTime_ = toSonyflakeTime(settings.StartTime);
             elapsedTime_ = 0;
             sequence_ = (1 << BitLenSequence) - 1;
-
-            if( !settings.MachineID )
-            {
-                throw std::runtime_error("MachineID function is null");
-            }
-
-            machineID_ = settings.MachineID();
-            if( settings.CheckMachineID && !settings.CheckMachineID(machineID_) )
-            {
-                throw std::runtime_error("invalid machine id");
-            }
+            machineID_ = settings.MachineID;
         }
 
         /**
@@ -93,7 +55,10 @@ namespace sonyflakepp
         {
             std::lock_guard<std::mutex> lock(mutex_);
 
-            int64_t current = currentElapsedTime();
+            int64_t current = (std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::system_clock::now().time_since_epoch()
+                ).count() / sonyflakeTimeUnit) - startTime_;
+
             if( elapsedTime_ < current )
             {
                 elapsedTime_ = current;
@@ -106,10 +71,19 @@ namespace sonyflakepp
                 {
                     elapsedTime_++;
                     int64_t overtime = elapsedTime_ - current;
-                    sleepTime(overtime);
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(overtime * sonyflakeTimeUnit) -
+                                                std::chrono::nanoseconds(std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                                std::chrono::system_clock::now().time_since_epoch()
+                    ).count() % sonyflakeTimeUnit));
                 }
             }
-            return toID();
+            if( elapsedTime_ >= (static_cast<uint64_t>(1) << BitLenTime) )
+            {
+                throw std::overflow_error("over the time limit");
+            }
+            return (static_cast<uint64_t>(elapsedTime_) << (BitLenSequence + BitLenMachineID)) |
+                (static_cast<uint64_t>(sequence_) << BitLenMachineID) |
+                static_cast<uint64_t>(machineID_);
         }
 
     private:
@@ -120,58 +94,13 @@ namespace sonyflakepp
         uint16_t machineID_; ///< Machine ID
 
         /**
-         * @brief Gets the current time in nanoseconds.
-         * @return The current time in nanoseconds.
-         */
-        uint64_t currentTime()
-        {
-            return std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::system_clock::now().time_since_epoch()
-            ).count();
-        }
-
-        /**
-         * @brief Gets the elapsed time since the start time.
-         * @return The elapsed time in Sonyflake time units.
-         */
-        int64_t currentElapsedTime()
-        {
-            return toSonyflakeTime(std::chrono::system_clock::now()) - startTime_;
-        }
-
-        /**
-         * @brief Sleeps for the specified overtime duration.
-         * @param overtime The overtime duration to sleep for in Sonyflake time units.
-         */
-        void sleepTime(int64_t overtime)
-        {
-            std::this_thread::sleep_for(std::chrono::nanoseconds(overtime * sonyflakeTimeUnit) -
-                                        std::chrono::nanoseconds(currentTime() % sonyflakeTimeUnit));
-        }
-
-        /**
          * @brief Converts a time point to Sonyflake time units.
          * @param t The time point to convert.
          * @return The time in Sonyflake time units.
          */
-        int64_t toSonyflakeTime(const std::chrono::time_point<std::chrono::system_clock>& t)
+        static int64_t toSonyflakeTime(const std::chrono::time_point<std::chrono::system_clock>& t)
         {
             return t.time_since_epoch().count() / sonyflakeTimeUnit;
-        }
-
-        /**
-         * @brief Converts the elapsed time, sequence number, and machine ID to a unique ID.
-         * @return The unique ID.
-         */
-        uint64_t toID() const
-        {
-            if( elapsedTime_ >= (static_cast<long long>(1) << BitLenTime) )
-            {
-                throw std::overflow_error("over the time limit");
-            }
-            return (static_cast<uint64_t>(elapsedTime_) << (BitLenSequence + BitLenMachineID)) |
-                (static_cast<uint64_t>(sequence_) << BitLenMachineID) |
-                static_cast<uint64_t>(machineID_);
         }
     };
 
