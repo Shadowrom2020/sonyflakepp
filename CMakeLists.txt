@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.12)
 
-project (sonyflakepp VERSION 1.0.0 DESCRIPTION "Sonyflake++")
+project (sonyflakepp VERSION 1.0.1 DESCRIPTION "Sonyflake++")
 
 include(GNUInstallDirs)
 
