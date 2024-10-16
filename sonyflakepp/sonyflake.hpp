@@ -16,15 +16,6 @@ namespace sonyflakepp
     constexpr int64_t sonyflakeTimeUnit = 10000000; ///< Time unit in nanoseconds (10 milliseconds)
 
     /**
-     * @brief Settings configures the Sonyflake generator.
-     */
-    struct Settings
-    {
-        std::chrono::time_point<std::chrono::system_clock> StartTime; ///< Start time for the Sonyflake
-        uint16_t MachineID; ///< Unique machine ID
-    };
-
-    /**
      * @brief Sonyflake is a distributed unique ID generator.
      */
     class Sonyflake
@@ -34,17 +25,12 @@ namespace sonyflakepp
          * @brief Constructs a new Sonyflake object with the given settings.
          * @param settings Configuration settings for the Sonyflake generator.
          */
-        Sonyflake(const Settings& settings)
+        Sonyflake(uint16_t machineID)
         {
-            if( settings.StartTime > std::chrono::system_clock::now() )
-            {
-                throw std::invalid_argument("start time is ahead of now");
-            }
-
-            startTime_ = toSonyflakeTime(settings.StartTime);
+            startTime_ = toSonyflakeTime(std::chrono::system_clock::now());
             elapsedTime_ = 0;
             sequence_ = (1 << BitLenSequence) - 1;
-            machineID_ = settings.MachineID;
+            machineID_ = machineID;
         }
 
         /**
@@ -98,7 +84,7 @@ namespace sonyflakepp
          * @param t The time point to convert.
          * @return The time in Sonyflake time units.
          */
-        static int64_t toSonyflakeTime(const std::chrono::time_point<std::chrono::system_clock>& t)
+        static int64_t toSonyflakeTime(const std::chrono::time_point<std::chrono::system_clock> t)
         {
             return t.time_since_epoch().count() / sonyflakeTimeUnit;
         }

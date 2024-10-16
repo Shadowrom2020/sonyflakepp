@@ -4,11 +4,7 @@
 
 void testNextID()
 {
-    sonyflakepp::Settings settings;
-    settings.StartTime = std::chrono::system_clock::now();
-    settings.MachineID = 1;
-
-    sonyflakepp::Sonyflake sf(settings);
+    sonyflakepp::Sonyflake sf(1);
 
     auto id1 = sf.NextID();
     auto id2 = sf.NextID();
@@ -18,11 +14,7 @@ void testNextID()
 
 void testHighFrequencyIDGeneration()
 {
-    sonyflakepp::Settings settings;
-    settings.StartTime = std::chrono::system_clock::now();
-    settings.MachineID = 1;
-
-    sonyflakepp::Sonyflake sf(settings);
+    sonyflakepp::Sonyflake sf(1);
     for( int i = 0; i < 10000; ++i )
     {
         auto id1 = sf.NextID();
@@ -34,18 +26,14 @@ void testHighFrequencyIDGeneration()
 
 void testIDComposition()
 {
-    sonyflakepp::Settings settings;
-    settings.StartTime = std::chrono::system_clock::now();
-    settings.MachineID = 1;
-
-    sonyflakepp::Sonyflake sf(settings);
+    sonyflakepp::Sonyflake sf(1);
     auto id = sf.NextID();
 
     uint64_t timePart = id >> (sonyflakepp::BitLenSequence + sonyflakepp::BitLenMachineID);
     uint64_t seqPart = (id >> sonyflakepp::BitLenMachineID) & ((1 << sonyflakepp::BitLenSequence) - 1);
     uint64_t machinePart = id & ((1 << sonyflakepp::BitLenMachineID) - 1);
 
-    assert(machinePart == settings.MachineID);
+    assert(machinePart == 1);
     std::cout << "testIDComposition passed" << std::endl;
 }
 
