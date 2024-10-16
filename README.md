@@ -1,5 +1,5 @@
 # sonyflakepp
-Sonyflakepp is a C++ implementation of [Sonyflake](https://github.com/sony/sonyflake)
+Sonyflakepp is a C++ implementation of [Sonyflake](https://github.com/sony/sonyflake) (c) 2015 Sony Corporation
 
 Sonyflake is a distributed unique ID generator inspired by [Twitter's Snowflake](https://blog.twitter.com/2010/announcing-snowflake).  
 
