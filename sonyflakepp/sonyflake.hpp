@@ -5,7 +5,8 @@
 #include <chrono>
 #include <mutex>
 #include <stdexcept>
-#include <functional>
+#include <array>
+#include <string>
 
 namespace sonyflakepp
 {
@@ -14,6 +15,14 @@ namespace sonyflakepp
     constexpr int BitLenSequence = 8;     ///< Bit length of sequence number
     constexpr int BitLenMachineID = 63 - BitLenTime - BitLenSequence; ///< Bit length of machine ID
     constexpr int64_t sonyflakeTimeUnit = 10000000; ///< Time unit in nanoseconds (10 milliseconds)
+
+    /// Base64 encoding table
+    const std::array<char, 64> base64_chars = {
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+        'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+        'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+    };
 
     /**
      * @brief Sonyflake is a distributed unique ID generator.
@@ -70,6 +79,23 @@ namespace sonyflakepp
             return (static_cast<uint64_t>(elapsedTime_) << (BitLenSequence + BitLenMachineID)) |
                 (static_cast<uint64_t>(sequence_) << BitLenMachineID) |
                 static_cast<uint64_t>(machineID_);
+        }
+
+        /**
+        * @brief Converts the given ID to a Base64-encoded string.
+        * @param id The ID to convert.
+        * @return The Base64-encoded string.
+        */
+        std::string IDToBase64(uint64_t id)
+        {
+            std::string base64;
+            int index = 0;
+            for( int i = 0; i < 64; i += 6 )
+            {
+                index = (id >> (58 - i)) & 0x3F;
+                base64 += base64_chars[index];
+            }
+            return base64;
         }
 
     private:
