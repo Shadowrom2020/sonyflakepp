@@ -25,18 +25,18 @@ Configure, build and install with CMake
 
 Integrate with CMake:
 
----
+```cmake
 project("Sonyflakepp-Example")
 
 find_package(sonyflakepp CONFIG REQUIRED)
 
 add_executable(sonyflakepp-example src/main.cc)
 target_link_libraries(sonyflakepp-example sonyflakepp::sonyflakepp)
----
+```
 
 Example usage in c++:
 
----
+```c++
 #include "sonyflake.hpp"
 #include <iostream>
 
@@ -54,4 +54,4 @@ int main() {
 
     return 0;
 }
----
+```
